@@ -1,0 +1,32 @@
+{
+  "name": "poker-service",
+  "version": "0.1.0",
+  "description": "A service for managing a game of No Limit Texas Holdem Poker",
+  "main": "libs/pokerService.js",
+  "scripts": {
+    "test": "jest",
+    "demo": "node demo"
+  },
+  "keywords": [
+    "poker",
+    "casino"
+  ],
+  "author": "Dan Lippold",
+  "engines": {
+    "node": ">=10.0.0"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "chalk": "^2.4.2",
+    "clear": "^0.1.0",
+    "figlet": "^1.2.1",
+    "inquirer": "^6.2.2",
+    "jest": "^24.0.0",
+    "minimist": "^1.2.0"
+  },
+  "dependencies": {
+    "js-combinatorics": "^0.5.4",
+    "knuth-shuffle-seeded": "^1.0.6",
+    "poker-hand-evaluator": "^1.0.1"
+  }
+}
