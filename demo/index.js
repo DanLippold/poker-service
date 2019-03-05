@@ -1,8 +1,32 @@
 const PokerService = require('../libs/pokerService');
-const { banner, text, clear } = require('./textUtils');
+const { banner, text, clear, table, newLine } = require('./textUtils');
 const { prompt } = require('./questionUtils');
 
 const DEFAULT_PLAYER_COUNT = 4;
+
+function getPlayerStats(player, index, activePlayerIndex, { dealerPosition, smallBlindPosition, bigBlindPosition }) {
+    let roleText = '';
+
+    if (index === dealerPosition) {
+        roleText = 'D';
+    } else if (index === smallBlindPosition) {
+        roleText = 'S';
+    } else if (index === bigBlindPosition) {
+        roleText = 'B';
+    }
+
+    return {
+        name: player.name,
+        chipValue: `$${player.chipValue}`,
+        role: roleText ? `(${roleText})` : '',
+        cards: player.cards.map(card => card.shortSuitSymbolValue).join(' '),
+        activeBet: player.activeBetValue ? `$${player.activeBetValue}` : ''
+    };
+}
+
+function getBoardText(boardCards) {
+    return `[${Array(5).fill().map((_, i) => boardCards[i] ? boardCards[i].shortSuitSymbolValue : '  ').join(' ')}]`;
+}
 
 async function getPlayers(playerCount) {
     const players = Array(Number(playerCount)).fill();
@@ -39,39 +63,34 @@ async function demo() {
     pokerService = new PokerService(options);
 
     const players = pokerService.players;
-    text(`Distributing chips...`);
-    text(`Selecting dealer position...`);
-    text(`Dealer: ${players[pokerService.table.dealerPosition].name}`);
-    text(`Dealing cards...`);
-    players.forEach(player => {
-        text(`${player.name}: ${player.cards.map(card => card.symbol).join(' ')}`);
-    });
+
     let nextTurnRequest = pokerService.activeTurnRequest;
 
     while (nextTurnRequest.players.filter(player => player.cards.length).length) { // TODO: Do While?
-        text(`It's ${nextTurnRequest.playerName}'s turn to act`);
-        text(`Board: ${nextTurnRequest.boardCards.map(card => card.symbol).join(' ')}`);
-        text(`Chips: ${nextTurnRequest.playerChipCount}`);
-        text(`Cards: ${nextTurnRequest.playerCards.map(card => card.symbol).join(' ')}`);
+        clear();
+        const playerStats = players.map((player, index) => {
+            return getPlayerStats(player, index, nextTurnRequest.playerPosition, pokerService.table);
+        });
+
+        text(getBoardText(nextTurnRequest.boardCards));
+        newLine();
+        text(`$${nextTurnRequest.potValue}`);
+        newLine();
+        table(playerStats, ['name', 'role', 'chipValue', 'cards', 'activeBet'], nextTurnRequest.playerName);
+        newLine();
+
+        let choices = [{ name: 'Fold', value: 'FOLD' }];
+        if (nextTurnRequest.activeBetValue) {
+            choices = [{ name: 'Call', value: 'CALL' }, { name: 'Raise', value: 'RAISE' }, ...choices];
+        } else {
+            choices = [{ name: 'Check', value: 'CHECK' }, { name: 'Bet', value: 'BET' }, ...choices];
+        }
 
         const playerAction = (await prompt([{
             type: 'list',
-            message: 'What would you like to do?',
+            message: `Action to ${nextTurnRequest.playerName}`,
             name: 'action',
-            choices: [
-                {
-                    name: 'Bet',
-                    value: 'BET'
-                },
-                {
-                    name: 'Check',
-                    value: 'CHECK'
-                },
-                {
-                    name: 'Fold',
-                    value: 'FOLD'
-                }
-            ]
+            choices
         }])).action;
 
         nextTurnRequest = pokerService.act({

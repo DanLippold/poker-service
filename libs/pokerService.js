@@ -13,9 +13,9 @@ class PokerService {
 
         this.playerCount = options.players.length;
         this.players = options.players;
-        this.startingChipCount = options.chips;
+        this.startingChipValue = options.chips;
 
-        this.table = new Table(this.players, this.startingChipCount);
+        this.table = new Table(this.players, this.startingChipValue);
 
         this.setTurnRequest();
     }
@@ -25,9 +25,12 @@ class PokerService {
 
         this.activeTurnRequest.playerName = this.table.activePlayer.name;
         this.activeTurnRequest.playerCards = this.table.activePlayer.cards;
-        this.activeTurnRequest.playerChipCount = this.table.activePlayer.chipCount;
+        this.activeTurnRequest.playerChipValue = this.table.activePlayer.chipValue;
         this.activeTurnRequest.players = this.players;
         this.activeTurnRequest.boardCards = this.table.board;
+        this.activeTurnRequest.playerPosition = this.table.activePlayerIndex;
+        this.activeTurnRequest.activeBetValue = this.table.activeBetValue;
+        this.activeTurnRequest.potValue = this.table.potValue;
     }
 
     act(turn) {
