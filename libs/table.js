@@ -3,12 +3,15 @@ const PokerHand = require('poker-hand-evaluator');
 
 const Deck = require('./deck');
 const Dealer = require('./dealer');
-const { allPlayersFromFirstToAct } = require('./iterables');
+const { activePlayersFromFirstToAct, activePlayersFromDealer } = require('./iterables');
 
 class Table {
     constructor(players, startingChips) {
         this.players = players;
-        this.players.forEach(player => { player.chipCount = startingChips; });
+        this.players.forEach(player => {
+            player.chipValue = startingChips;
+            player.activeBetValue = 0;
+        });
         this.activeBets = Array(this.players.length);
         this.activeBetValue = 0;
         this.potValue = 0;
@@ -32,7 +35,7 @@ class Table {
 
         Dealer.dealNewCardsToEachPlayer(players, this.deck, dealerPosition);
 
-        this.setFirstPlayerToAct(players, dealerPosition);
+        this.setFirstPlayerToAct(players, dealerPosition, this.board);
     }
 
     static getNextPlayerIndex(players, currentIndex) {
@@ -43,7 +46,7 @@ class Table {
         let index = Table.getNextPlayerIndex(players, currentIndex);
     
         while (index !== currentIndex) {
-            if (players[index].chipCount > 0) {
+            if (players[index].chipValue > 0) {
                 return index;
             }
             index = Table.getNextPlayerIndex(players, currentIndex)
@@ -52,10 +55,13 @@ class Table {
         return -1;
     }
 
-    setFirstPlayerToAct(players, dealerPosition) {
-        this.activePlayer = allPlayersFromFirstToAct(players, dealerPosition)[Symbol.iterator]().next().value;
+    setFirstPlayerToAct(players, dealerPosition, board) {
+        const iterable = board.length ? activePlayersFromDealer : activePlayersFromFirstToAct;
+
+        this.activePlayer = iterable(players, dealerPosition)[Symbol.iterator]().next().value;
         this.activePlayerIndex = players.indexOf(this.activePlayer);
         this.bettingPlayerIndex = this.bigBlindPosition;
+        this.activeBetValue = 0; // TODO: Big Blind Value
     }
 
     endTurn() {
@@ -68,22 +74,18 @@ class Table {
                     const playerCards = player.cards.map(card => card.shortSuitValue);
                     const boardCards = this.board.map(card => card.shortSuitValue);
                     const possibleHands = Combinatorics.combination([...playerCards, ...boardCards], 5).toArray();
-                    const handString = possibleHands[0].join(' ');
-                    if (handString.length != 14) {
-                        console.log(handString);
-                    }
                     const possibleHandScores = possibleHands.map(possibleHand => new PokerHand(possibleHand.join(' ')).getScore());
-                    const bestHandScore = Math.min(...possibleHandScores);
-                    return bestHandScore;
+                    return Math.min(...possibleHandScores);
                 });
                 const winningPlayerIndex = handRanks.indexOf(Math.min(...handRanks)); // TODO: Handle split pot
                 const winningPlayer = this.players[winningPlayerIndex];
-                winningPlayer.chipCount += this.potValue;
+                winningPlayer.chipValue += this.potValue;
                 this.dealerPosition = Table.getNextPlayerIndex(this.players, this.dealerPosition);
                 this.startNextHand(this.dealerPosition, this.players);
             } else {
+                this.players.forEach(player => { player.activeBetValue = 0; });
                 Dealer.dealStreet(this.board, this.deck);
-                this.setFirstPlayerToAct(this.players, this.dealerPosition);
+                this.setFirstPlayerToAct(this.players, this.dealerPosition, this.board);
             }
         }
     }
@@ -94,19 +96,21 @@ class Table {
 
     call() {
         // TODO: Validate call
-        const valueOwed = this.activeBetValue - this.activeBets[this.activePlayerIndex];
-        this.activePlayer.chipCount -= valueOwed; // Pay what is owed
+        const valueOwed = this.activeBetValue - this.activePlayer.activeBetValue;
+        this.activePlayer.chipValue -= valueOwed; // Pay what is owed
         this.activeBets[this.activePlayerIndex] = this.activeBetValue;
+        this.activePlayer.activeBetValue = this.activeBetValue;
         this.potValue += valueOwed; // TODO: Should this be done here or after the pot is good? Risk of this being off? Probably.
         this.endTurn();
     }
 
     bet(amount) {
         // TODO: Validate bet
-        this.activeBetValue = amount;
+        this.activeBetValue += amount;
         this.activeBets[this.activePlayerIndex] += amount;
-        this.potValue += amount; // TODO: Should this be done here or after the pot is good? Risk of this being off? Probably.
-        this.activePlayer.chipCount -= amount;
+        this.potValue += this.activeBetValue; // TODO: Should this be done here or after the pot is good? Risk of this being off? Probably.
+        this.activePlayer.chipValue -= this.activeBetValue;
+        this.activePlayer.activeBetValue += this.activeBetValue;
         this.bettingPlayerIndex = amount ? this.activePlayerIndex : this.bettingPlayerIndex;
         this.endTurn();
     }

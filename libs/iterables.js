@@ -10,7 +10,7 @@ function getNextActivePlayerIndex(players, currentIndex) {
     let index = getNextPlayerIndex(players, currentIndex);
 
     while (index !== currentIndex) {
-        if (players[index].chipCount > 0) {
+        if (players[index].chipValue > 0) {
             return index;
         }
         index = getNextPlayerIndex(players, currentIndex)

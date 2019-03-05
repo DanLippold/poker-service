@@ -41,6 +41,7 @@ class Card {
         this.shortStringValue = shortValue; // K
         this.longStringValue = longValue; // 'King'
         this.shortSuitValue = this.shortStringValue + this.suit.shortValue; // 'KS'
+        this.shortSuitSymbolValue = this.shortStringValue + this.suit.symbol; // 'K♠'
         this.symbol = cardSymbols[rawValue]; // 🂮
     }
 }
