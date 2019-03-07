@@ -1,5 +1,5 @@
 function getActivePlayers(players) {
-    return players.filter(player => player.chips > 0);
+    return players.filter(player => player.chipValue > 0);
 }
 
 function getNextPlayerIndex(players, currentIndex) {

@@ -4,6 +4,20 @@ const { prompt } = require('./questionUtils');
 
 const DEFAULT_PLAYER_COUNT = 4;
 
+function getActiveBetString(activeBetValue) {
+    let activeBet;
+
+    if (activeBetValue === -1) {
+        activeBet = '';
+    } else if (activeBetValue === 0) {
+        activeBet = 'Check';
+    } else {
+        activeBet = `$${activeBetValue}`
+    }
+
+    return activeBet;
+}
+
 function getPlayerStats(player, index, activePlayerIndex, { dealerPosition, smallBlindPosition, bigBlindPosition }) {
     let roleText = '';
 
@@ -20,7 +34,7 @@ function getPlayerStats(player, index, activePlayerIndex, { dealerPosition, smal
         chipValue: `$${player.chipValue}`,
         role: roleText ? `(${roleText})` : '',
         cards: player.cards.map(card => card.shortSuitSymbolValue).join(' '),
-        activeBet: player.activeBetValue ? `$${player.activeBetValue}` : ''
+        activeBet: getActiveBetString(player.activeBetValue)
     };
 }
 
@@ -80,7 +94,7 @@ async function demo() {
         newLine();
 
         let choices = [{ name: 'Fold', value: 'FOLD' }];
-        if (nextTurnRequest.activeBetValue) {
+        if (nextTurnRequest.activeBetValue > 0) {
             choices = [{ name: 'Call', value: 'CALL' }, { name: 'Raise', value: 'RAISE' }, ...choices];
         } else {
             choices = [{ name: 'Check', value: 'CHECK' }, { name: 'Bet', value: 'BET' }, ...choices];

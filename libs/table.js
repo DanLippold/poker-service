@@ -10,7 +10,7 @@ class Table {
         this.players = players;
         this.players.forEach(player => {
             player.chipValue = startingChips;
-            player.activeBetValue = 0;
+            player.activeBetValue = -1;
         });
         this.activeBets = Array(this.players.length);
         this.activeBetValue = 0;
@@ -32,6 +32,14 @@ class Table {
             this.smallBlindPosition = dealerPosition + 1 === players.length ? 0 : dealerPosition + 1;
             this.bigBlindPosition = this.smallBlindPosition + 1 === players.length ? 0 : this.smallBlindPosition + 1;
         }
+
+        // Collect blinds
+        this.activePlayerIndex = this.smallBlindPosition;
+        this.activePlayer = players[this.activePlayerIndex];
+        this.bet(5);
+        this.activePlayerIndex = this.bigBlindPosition;
+        this.activePlayer = players[this.activePlayerIndex];
+        this.raise(5);
 
         Dealer.dealNewCardsToEachPlayer(players, this.deck, dealerPosition);
 
@@ -60,15 +68,16 @@ class Table {
 
         this.activePlayer = iterable(players, dealerPosition)[Symbol.iterator]().next().value;
         this.activePlayerIndex = players.indexOf(this.activePlayer);
-        this.bettingPlayerIndex = this.bigBlindPosition;
-        this.activeBetValue = 0; // TODO: Big Blind Value
+        this.bettingPlayerIndex = board.length ? -1 : this.bigBlindPosition; // Big blind starts the bet
     }
 
     endTurn() {
+        const previousActivePlayerIndex = this.activePlayerIndex;
         this.activePlayerIndex = Table.getNextActivePlayerIndex(this.players, this.activePlayerIndex);
         this.activePlayer = this.players[this.activePlayerIndex];
 
-        if (this.activePlayerIndex === this.bettingPlayerIndex) { // Pot is good
+        if (this.activePlayerIndex === this.bettingPlayerIndex ||
+            this.bettingPlayerIndex === -1 && previousActivePlayerIndex === this.dealerPosition) { // Pot is good
             if (this.board.length === 5) { // End of Hand
                 const handRanks = this.players.map(player => {
                     const playerCards = player.cards.map(card => card.shortSuitValue);
@@ -80,10 +89,13 @@ class Table {
                 const winningPlayerIndex = handRanks.indexOf(Math.min(...handRanks)); // TODO: Handle split pot
                 const winningPlayer = this.players[winningPlayerIndex];
                 winningPlayer.chipValue += this.potValue;
+                this.players.forEach(player => { player.activeBetValue = -1; });
+                this.activeBetValue = 0;
                 this.dealerPosition = Table.getNextPlayerIndex(this.players, this.dealerPosition);
                 this.startNextHand(this.dealerPosition, this.players);
             } else {
-                this.players.forEach(player => { player.activeBetValue = 0; });
+                this.players.forEach(player => { player.activeBetValue = -1; });
+                this.activeBetValue = 0;
                 Dealer.dealStreet(this.board, this.deck);
                 this.setFirstPlayerToAct(this.players, this.dealerPosition, this.board);
             }
@@ -96,6 +108,9 @@ class Table {
 
     call() {
         // TODO: Validate call
+        if (this.activePlayer.activeBetValue === -1) {
+            this.activePlayer.activeBetValue = 0; // Player has taken action
+        }
         const valueOwed = this.activeBetValue - this.activePlayer.activeBetValue;
         this.activePlayer.chipValue -= valueOwed; // Pay what is owed
         this.activeBets[this.activePlayerIndex] = this.activeBetValue;
@@ -106,6 +121,9 @@ class Table {
 
     bet(amount) {
         // TODO: Validate bet
+        if (this.activePlayer.activeBetValue === -1) {
+            this.activePlayer.activeBetValue = 0; // Player has taken action
+        }
         this.activeBetValue += amount;
         this.activeBets[this.activePlayerIndex] += amount;
         this.potValue += this.activeBetValue; // TODO: Should this be done here or after the pot is good? Risk of this being off? Probably.

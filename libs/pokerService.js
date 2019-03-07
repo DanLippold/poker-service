@@ -13,9 +13,8 @@ class PokerService {
 
         this.playerCount = options.players.length;
         this.players = options.players;
-        this.startingChipValue = options.chips;
 
-        this.table = new Table(this.players, this.startingChipValue);
+        this.table = new Table(this.players, options.chips);
 
         this.setTurnRequest();
     }
