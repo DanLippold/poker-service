@@ -32,7 +32,7 @@ function banner(value) {
 function table(data, columns, highlightValue) {
     const table = columnify(data, {
         showHeaders: false,
-        minWidth: 3,
+        minWidth: 5,
         columns,
         dataTransform: function(cellData) {
             return cellData === highlightValue ? secondary(cellData) : primary(cellData);

@@ -6,16 +6,25 @@ const DEFAULT_CHIPS_PER_PLAYER = 10000;
 
 class PokerService {
     constructor(options) {
+        if (!options.players || options.players.length < 2) { // TODO: players should probably be a mandatory first param
+            throw new Error('2 or more players need to be defined in options');
+        }
+
         options = Object.assign({
-            players: [],
             chips: DEFAULT_CHIPS_PER_PLAYER
         }, options);
 
         this.playerCount = options.players.length;
         this.players = options.players;
 
-        this.table = new Table(this.players, options.chips);
-
+        this.table = new Table(this.players, options.chips, options.seed);
+        this.tableActions = {
+            FOLD: 'fold',
+            CALL: 'call',
+            BET: 'bet',
+            RAISE: 'raise',
+            CHECK: 'check'
+        }
         this.setTurnRequest();
     }
 
@@ -36,19 +45,7 @@ class PokerService {
         if (!this.table.validTurn(turn.type, turn.amount)) {
             return this.activeTurnRequest; // Probably should return an error
         }
-
-        if (turn.type === 'FOLD') {
-            this.table.fold();
-        } else if (turn.type === 'CALL') {
-            this.table.call();
-        } else if (turn.type === 'BET') { // BET
-            this.table.bet(turn.amount);
-        } else if (turn.type === 'RAISE') { // BET
-            this.table.raise(turn.amount);
-        } else { // CHECK
-            this.table.bet(0);
-        }
-
+        this.table[this.tableActions[turn.type]](turn.amount);
         this.setTurnRequest();
 
         return this.activeTurnRequest;

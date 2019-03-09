@@ -1,75 +1,42 @@
-function getActivePlayers(players) {
-    return players.filter(player => player.chipValue > 0);
-}
+const { getActivePlayerCount, isActive } = require('./player');
 
 function getNextPlayerIndex(players, currentIndex) {
     return currentIndex === players.length - 1 ? 0 : currentIndex + 1;
 }
 
 function getNextActivePlayerIndex(players, currentIndex) {
-    let index = getNextPlayerIndex(players, currentIndex);
-
-    while (index !== currentIndex) {
-        if (players[index].chipValue > 0) {
-            return index;
+    for (let player of allPlayersFromIndex(players, currentIndex)) {
+        if (isActive(player)) {
+            return players.indexOf(player);
         }
-        index = getNextPlayerIndex(players, currentIndex)
     }
 
     return -1;
 }
 
-function playersFromDealer(players, dealerIndex, nextPlayerIndexGetter) {
+function playersFromIndex(players, index, nextPlayerIndexGetter) {
     return {
         *[Symbol.iterator]() {
-            let i = nextPlayerIndexGetter(players, dealerIndex);
-            while (i !== dealerIndex) {
+            let i = nextPlayerIndexGetter(players, index);
+            while (i !== index) {
                 yield players[i];
                 i = nextPlayerIndexGetter(players, i);
             }
-            yield players[dealerIndex];
+            yield players[index];
         }
     }
 }
 
-function playersFromFirstToAct(players, dealerIndex, nextPlayerIndexGetter, activePlayersGetter) {
-    return {
-        *[Symbol.iterator]() {
-            let startingIndex = dealerIndex;
-            if (activePlayersGetter(players).length > 2) {
-                startingIndex = nextPlayerIndexGetter(players, startingIndex); // small blind
-                startingIndex = nextPlayerIndexGetter(players, startingIndex); // big blind
-                startingIndex = nextPlayerIndexGetter(players, startingIndex); // first to act
-            }
-            yield players[startingIndex];
-            let i = nextPlayerIndexGetter(players, startingIndex);
-            while (i !== startingIndex) {
-                yield players[i];
-                i = nextPlayerIndexGetter(players, i);
-            }
-        }
-    }
+function allPlayersFromIndex(players, index) {
+    return playersFromIndex(players, index, getNextPlayerIndex);
 }
 
-function allPlayersFromDealer(players, dealerIndex) {
-    return playersFromDealer(players, dealerIndex, getNextPlayerIndex);
-}
-
-function activePlayersFromDealer(players, dealerIndex) {
-    return playersFromDealer(players, dealerIndex, getNextActivePlayerIndex);
-}
-
-function activePlayersFromFirstToAct(players, dealerIndex) {
-    return playersFromFirstToAct(players, dealerIndex, getNextActivePlayerIndex, getActivePlayers);
-}
-
-function allPlayersFromFirstToAct(players, dealerIndex) {
-    return playersFromFirstToAct(players, dealerIndex, getNextPlayerIndex, () => players);
+function activePlayersFromIndex(players, index) {
+    return playersFromIndex(players, index, getNextActivePlayerIndex);
 }
 
 module.exports = {
-    activePlayersFromDealer,
-    activePlayersFromFirstToAct,
-    allPlayersFromDealer,
-    allPlayersFromFirstToAct
+    activePlayersFromDealer: activePlayersFromIndex,
+    activePlayersFromIndex,
+    allPlayersFromDealer: allPlayersFromIndex
 }
