@@ -1,8 +1,10 @@
+const randomWords = require('random-words');
 const PokerService = require('../libs/pokerService');
 const { banner, text, clear, table, newLine } = require('./textUtils');
 const { prompt } = require('./questionUtils');
 
 const DEFAULT_PLAYER_COUNT = 4;
+const DEFAULT_CHIP_COUNT = 100;
 
 function getActiveBetString(activeBetValue) {
     let activeBet;
@@ -11,6 +13,8 @@ function getActiveBetString(activeBetValue) {
         activeBet = '';
     } else if (activeBetValue === 0) {
         activeBet = 'Check';
+    } else if (activeBetValue === -2) {
+        activeBet = 'Folded';
     } else {
         activeBet = `$${activeBetValue}`
     }
@@ -34,7 +38,8 @@ function getPlayerStats(player, index, activePlayerIndex, { dealerPosition, smal
         chipValue: `$${player.chipValue}`,
         role: roleText ? `(${roleText})` : '',
         cards: player.cards.map(card => card.shortSuitSymbolValue).join(' '),
-        activeBet: getActiveBetString(player.activeBetValue)
+        activeBet: getActiveBetString(player.activeBetValue),
+        pokerHand: player.pokerHand
     };
 }
 
@@ -56,6 +61,24 @@ async function getPlayers(playerCount) {
     });
 }
 
+async function getStartingChips() {
+    return (await prompt([{
+        message: 'How many chips should each player start with?',
+        name: 'startingChips',
+        default: DEFAULT_CHIP_COUNT,
+        validate: (chipCount) => {
+            return Number(chipCount) !== NaN && Number(chipCount) >= 10 || 'You need to provide a number of 10 or more';
+        }
+    }])).startingChips;
+}
+
+async function getSeed() {
+    return (await prompt([{
+        message: 'Specify optional game seed',
+        name: 'seed'
+    }])).seed || randomWords();
+}
+
 async function demo() {
     clear();
 
@@ -70,9 +93,14 @@ async function demo() {
         }
     }])).playerCount;
 
+    
     const options = {
-        players: await getPlayers(playerCount)
+        players: await getPlayers(playerCount),
+        chips: await getStartingChips()
     };
+
+    const seed = await getSeed();
+    options.seed = seed;
 
     pokerService = new PokerService(options);
 
@@ -86,11 +114,13 @@ async function demo() {
             return getPlayerStats(player, index, nextTurnRequest.playerPosition, pokerService.table);
         });
 
+        text(`Seed "${seed}"`);
+        newLine();
         text(getBoardText(nextTurnRequest.boardCards));
         newLine();
         text(`$${nextTurnRequest.potValue}`);
         newLine();
-        table(playerStats, ['name', 'role', 'chipValue', 'cards', 'activeBet'], nextTurnRequest.playerName);
+        table(playerStats, ['name', 'role', 'chipValue', 'cards', 'activeBet', 'pokerHand'], nextTurnRequest.playerName);
         newLine();
 
         let choices = [{ name: 'Fold', value: 'FOLD' }];
