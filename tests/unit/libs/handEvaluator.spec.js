@@ -73,17 +73,24 @@ describe('getWinningPlayerss()', () => {
     });
 
     describe('flush', () => {
-        let players;
-
-        beforeEach(() => {
-            players = [
-                { name: 'Jane', cards: cards('KS', 'TS') },
-                { name: 'Bob', cards: cards('3C', '9C') }
-            ];
-        });
-    
         describe('flush over 2 pair', () => {
             test('returns winning player', () => {
+                const players = [
+                    { name: 'Jane', cards: cards('AS', 'TS') },
+                    { name: 'Bob', cards: cards('3C', '9C') }
+                ];
+                const board = cards('KC', 'TC', 'AH', '2H', '8C');
+                const winningPlayers = handEvaluator.getWinningPlayers(players, board);
+                expect(winningPlayers[0]).toEqual(players[1]); // Bob wins with flush
+            });
+        });
+
+        describe('flush over straight', () => {
+            test('returns winning player', () => {
+                const players = [
+                    { name: 'Jane', cards: cards('JS', 'QS') },
+                    { name: 'Bob', cards: cards('3C', '9C') }
+                ];
                 const board = cards('KC', 'TC', 'AH', '2H', '8C');
                 const winningPlayers = handEvaluator.getWinningPlayers(players, board);
                 expect(winningPlayers[0]).toEqual(players[1]); // Bob wins with flush
