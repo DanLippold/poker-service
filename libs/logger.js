@@ -14,7 +14,6 @@ class Logger {
     }
 
     _logGameLogToFile() {
-        const handNumber = this.gameLog.turns.length++;
         fs.writeFileSync(`hand${this.handNumber}.json`, JSON.stringify(this.gameLog, null, 4));
     }
 
