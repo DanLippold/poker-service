@@ -1,6 +1,7 @@
 
 const Table = require('./table');
 const TurnRequest = require('./turnRequest');
+const Logger = require('./logger');
 
 const DEFAULT_CHIPS_PER_PLAYER = 10000;
 
@@ -16,6 +17,12 @@ class PokerService {
 
         this.playerCount = options.players.length;
         this.players = options.players;
+        this.logging = options.logging;
+
+        if (this.logging) {
+            this.logger = new Logger();
+            logger.setOptions(options);
+        }
 
         this.table = new Table(this.players, options.chips, options.seed);
         this.tableActions = {
@@ -39,6 +46,7 @@ class PokerService {
         this.activeTurnRequest.playerPosition = this.table.activePlayerIndex;
         this.activeTurnRequest.activeBetValue = this.table.activeBetValue;
         this.activeTurnRequest.potValue = this.table.potValue;
+        this.activeTurnRequest.handNumber = this.table.handNumber;
     }
 
     act(turn) {
@@ -46,6 +54,10 @@ class PokerService {
             return this.activeTurnRequest; // Probably should return an error
         }
         this.table[this.tableActions[turn.type]](turn.amount);
+        if (this.logging) {
+            this.logger.logTurnRequest(this.activeTurnRequest);
+            this.logger.logAction(turn);
+        }
         this.setTurnRequest();
 
         return this.activeTurnRequest;
