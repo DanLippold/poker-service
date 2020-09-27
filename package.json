@@ -25,7 +25,7 @@
     "figlet": "^1.2.4",
     "inquirer": "^6.5.2",
     "jest": "^24.9.0",
-    "minimist": "^1.2.0",
+    "minimist": "^1.2.3",
     "prettier": "2.1.2",
     "random-words": "^1.1.0"
   },
