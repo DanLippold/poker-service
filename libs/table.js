@@ -6,6 +6,7 @@ const handEvaluator = require('./handEvaluator');
 class Table {
     constructor(players, startingChips, seed) {
         this.players = players;
+        this.handNumber = 0;
         this.dealer = new Dealer(seed);
         this.dealer.distributeChips(this.players, startingChips);
         this.dealer.setRandomDealer(this, this.players);
@@ -20,6 +21,7 @@ class Table {
         this.dealer.collectBlinds(this, players);
         this.dealer.dealNewCardsToEachPlayer(this, players, dealerPosition);
         this.dealer.setFirstPlayerToAct(this, players, dealerPosition, this.bigBlindPosition, this.board); // TODO: This feels dumb
+        this.handNumber++;
     }
 
     // All players have matched each other's bets, folded, or are out of chips

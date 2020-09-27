@@ -10,6 +10,9 @@ const improvedHandDescriptions = {
 };
 
 function getImprovedHandDescription(pokerHand) {
+    if (!pokerHand || !pokerHand.getRank) {
+        return '';
+    }
     return improvedHandDescriptions[pokerHand.getRank()];
 }
 

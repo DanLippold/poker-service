@@ -96,11 +96,9 @@ async function demo() {
     
     const options = {
         players: await getPlayers(playerCount),
-        chips: await getStartingChips()
+        chips: await getStartingChips(),
+        seed: await getSeed()
     };
-
-    const seed = await getSeed();
-    options.seed = seed;
 
     pokerService = new PokerService(options);
 
@@ -114,7 +112,7 @@ async function demo() {
             return getPlayerStats(player, index, nextTurnRequest.playerPosition, pokerService.table);
         });
 
-        text(`Seed "${seed}"`);
+        text(`Seed "${options.seed}"`);
         newLine();
         text(getBoardText(nextTurnRequest.boardCards));
         newLine();
