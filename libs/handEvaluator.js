@@ -24,7 +24,7 @@ function getHandScore(playerCards, board) {
 
 function getHandDescription(playerCards, board) {
     const pokerHand = getBestPokerHand(playerCards, board);
-    return pokerHand ? handDescriptor(pokerHand): '';
+    return pokerHand ? handDescriptor(pokerHand) : '';
 }
 
 function getWinningPlayers(players, board) {
