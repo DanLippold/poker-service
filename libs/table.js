@@ -41,14 +41,16 @@ class Table {
         );
       })
       .every(Boolean);
-
-    // return true;
-    // const everyoneChecked = this.bettingPlayerIndex === -1;
-    // const dealerJustActed = previousActivePlayerIndex === this.dealerPosition;
-    // const everyoneCalledOrFolded = this.activePlayerIndex === this.bettingPlayerIndex;
-
-    // return (everyoneChecked && dealerJustActed) || everyoneCalledOrFolded;
   }
+
+    // There is only one active player remaining. All other players have folded
+    _noMoreActivePlayers() {
+      const nextActivePlayer = getNextActivePlayerFromIndex(
+        this.players,
+        this.activePlayerIndex
+      );
+      return nextActivePlayer === this.activePlayer;
+    }
 
   _endTurn() {
     const previousActivePlayerIndex = this.activePlayerIndex;
@@ -57,31 +59,40 @@ class Table {
       this.activePlayerIndex
     );
     this.activePlayerIndex = this.players.indexOf(this.activePlayer);
+    const onlyOnePlayerRemains = this._noMoreActivePlayers();
 
-    if (this._potIsGood(previousActivePlayerIndex)) {
-      if (this.board.length === 5) {
-        // End of Hand
-        const winningPlayers = getWinningPlayers(this.players, this.board);
-        winningPlayers[0].chipValue += this.potValue; // TODO: Handle split pot
-        const newDealerPlayer = getNextActivePlayerFromIndex(
-          this.players,
-          this.dealerPosition
-        );
-        this.dealerPosition = this.players.indexOf(newDealerPlayer);
-        this._startNextHand(this.dealerPosition, this.players);
-      } else {
-        this.dealer.clearActiveBets(this, false);
-        this.dealer.dealStreet(this.board, this.deck);
-        this.dealer.setFirstPlayerToAct(
-          this,
-          this.players,
-          this.dealerPosition,
-          this.bigBlindPosition,
-          this.board
-        );
-      }
+    // Betting is still in progress
+    if (!onlyOnePlayerRemains && !this._potIsGood(previousActivePlayerIndex)) {
+      return;
     }
+    
+    if (this.board.length === 5 || onlyOnePlayerRemains) {
+      // End of Hand
+      const winningPlayers = onlyOnePlayerRemains ? 
+        [this.activePlayer] : 
+        getWinningPlayers(this.players, this.board);
+      winningPlayers[0].chipValue += this.potValue; // TODO: Handle split pot
+      const newDealerPlayer = getNextActivePlayerFromIndex(
+        this.players,
+        this.dealerPosition
+      );
+      this.dealerPosition = this.players.indexOf(newDealerPlayer);
+      this._startNextHand(this.dealerPosition, this.players);
+      return;
+    }
+    
+    // Deal next card
+    this.dealer.clearActiveBets(this, false);
+    this.dealer.dealStreet(this.board, this.deck);
+    this.dealer.setFirstPlayerToAct(
+      this,
+      this.players,
+      this.dealerPosition,
+      this.bigBlindPosition,
+      this.board
+    );
 
+    // Update poker hands
     this.players.forEach((player) => {
       player.pokerHand = handEvaluator.getHandDescription(
         player.cards,
